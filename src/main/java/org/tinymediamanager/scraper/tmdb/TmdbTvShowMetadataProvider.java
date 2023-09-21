@@ -78,7 +78,6 @@ import org.tinymediamanager.scraper.tmdb.entities.BaseTvShow;
 import org.tinymediamanager.scraper.tmdb.entities.CastMember;
 import org.tinymediamanager.scraper.tmdb.entities.ContentRating;
 import org.tinymediamanager.scraper.tmdb.entities.CrewMember;
-import org.tinymediamanager.scraper.tmdb.entities.EpisodeGroup;
 import org.tinymediamanager.scraper.tmdb.entities.FindResults;
 import org.tinymediamanager.scraper.tmdb.entities.Genre;
 import org.tinymediamanager.scraper.tmdb.entities.Image;
@@ -87,7 +86,7 @@ import org.tinymediamanager.scraper.tmdb.entities.Translations;
 import org.tinymediamanager.scraper.tmdb.entities.TvEpisode;
 import org.tinymediamanager.scraper.tmdb.entities.TvEpisodeGroup;
 import org.tinymediamanager.scraper.tmdb.entities.TvEpisodeGroupEpisode;
-import org.tinymediamanager.scraper.tmdb.entities.TvEpisodeGroups;
+import org.tinymediamanager.scraper.tmdb.entities.TvEpisodeGroupSeason;
 import org.tinymediamanager.scraper.tmdb.entities.TvSeason;
 import org.tinymediamanager.scraper.tmdb.entities.TvShow;
 import org.tinymediamanager.scraper.tmdb.entities.TvShowResultsPage;
@@ -322,14 +321,14 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
       }
 
       // get episode group data
-      Map<MediaEpisodeGroup, List<TvEpisodeGroup>> episodeGroups = new HashMap<>();
-      for (EpisodeGroup episodeGroup : ListUtils.nullSafe(showResponse.body().episodeGroups.episodeGroups)) {
+      Map<MediaEpisodeGroup, List<TvEpisodeGroupSeason>> episodeGroups = new HashMap<>();
+      for (TvEpisodeGroup episodeGroup : ListUtils.nullSafe(showResponse.body().episodeGroups.episodeGroups)) {
         if (episodeGroup.episodeCount == 0) {
           continue;
         }
 
         try {
-          Response<TvEpisodeGroups> episodeGroupsResponse = api.tvEpisodeGroupsService().episodeGroup(episodeGroup.id, language).execute();
+          Response<TvEpisodeGroup> episodeGroupsResponse = api.tvEpisodeGroupsService().episodeGroup(episodeGroup.id, language).execute();
           if (!episodeGroupsResponse.isSuccessful() || episodeGroupsResponse.body() == null) {
             throw new HttpException(episodeGroupsResponse.code(), episodeGroupsResponse.message());
           }
@@ -366,7 +365,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
   }
 
   private List<MediaMetadata> getSeasonEpisodes(int tmdbId, Integer seasonNumber, TvShowSearchAndScrapeOptions options, String originalLanguage,
-      Map<MediaEpisodeGroup, List<TvEpisodeGroup>> episodeGroups) throws IOException {
+      Map<MediaEpisodeGroup, List<TvEpisodeGroupSeason>> episodeGroups) throws IOException {
     Map<Integer, MediaMetadata> episodesInRequestedLanguage = new TreeMap<>();
     Map<Integer, MediaMetadata> episodesInFallbackLanguage = new TreeMap<>();
     Map<Integer, MediaMetadata> episodesInOriginalLanguage = new TreeMap<>();
@@ -631,7 +630,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
     md.addEpisodeGroup(MediaEpisodeGroup.DEFAULT_AIRED);
 
     if (complete.episodeGroups != null) {
-      for (EpisodeGroup episodeGroup : ListUtils.nullSafe(complete.episodeGroups.episodeGroups)) {
+      for (TvEpisodeGroup episodeGroup : ListUtils.nullSafe(complete.episodeGroups.episodeGroups)) {
         if (episodeGroup.episodeCount == 0) {
           continue;
         }
@@ -654,7 +653,8 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
               throw new HttpException(translationsResponse.code(), translationsResponse.message());
             }
             injectTranslations(Locale.forLanguageTag(language), complete, season, translationsResponse.body());
-          } catch (Exception e) {
+          }
+          catch (Exception e) {
             LOGGER.debug("Could not get season translations - '{}'", e.getMessage());
           }
         }
@@ -1380,7 +1380,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
   }
 
   private MediaMetadata morphTvEpisodeToMediaMetadata(BaseTvEpisode episode, TvSeason tvSeason,
-      Map<MediaEpisodeGroup, List<TvEpisodeGroup>> episodeGroups, MediaSearchAndScrapeOptions options) {
+      Map<MediaEpisodeGroup, List<TvEpisodeGroupSeason>> episodeGroups, MediaSearchAndScrapeOptions options) {
     MediaMetadata ep = new MediaMetadata(getId());
     ep.setScrapeOptions(options);
     ep.setId(getProviderInfo().getId(), episode.id);
@@ -1391,10 +1391,10 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
 
     // mix in episode groups
     if (episodeGroups != null) {
-      for (Map.Entry<MediaEpisodeGroup, List<TvEpisodeGroup>> entry : episodeGroups.entrySet()) {
+      for (Map.Entry<MediaEpisodeGroup, List<TvEpisodeGroupSeason>> entry : episodeGroups.entrySet()) {
         boolean found = false;
 
-        for (TvEpisodeGroup episodeGroup : entry.getValue()) {
+        for (TvEpisodeGroupSeason episodeGroup : entry.getValue()) {
           for (TvEpisodeGroupEpisode episodeInGroup : ListUtils.nullSafe(episodeGroup.episodes)) {
             if (Objects.equals(episode.id, episodeInGroup.id)) {
               ep.setEpisodeNumber(entry.getKey(), episodeGroup.order, episodeInGroup.order + 1); // +1 because TMDB counts episodes from zero!
