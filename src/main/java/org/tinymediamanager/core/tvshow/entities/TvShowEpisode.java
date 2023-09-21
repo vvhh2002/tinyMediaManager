@@ -516,7 +516,7 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
         }
       }
 
-      // write ALTERNATIVE only on demand
+      // write ALTERNATE only on demand
       if (getTvShow() != null && getTvShow().getEpisodeGroup().getEpisodeGroup() == ALTERNATE) {
         MediaEpisodeNumber episodeNumber = newValues.get(getTvShow().getEpisodeGroup());
         if (episodeNumber != null) {
