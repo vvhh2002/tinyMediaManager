@@ -1137,7 +1137,7 @@ public class TvShowEpisodeEditorDialog extends TmmDialog {
 
   private void addOrEditEpisodeNumber(MediaEpisodeNumber episodeNumber) {
     // remove the old one
-    MediaEpisodeNumber existing = episodeNumbers.stream().filter(ep -> ep.episodeGroup() == episodeNumber.episodeGroup()).findFirst().orElse(null);
+    MediaEpisodeNumber existing = episodeNumbers.stream().filter(ep -> ep.episodeGroup().getEpisodeGroup() == episodeNumber.episodeGroup().getEpisodeGroup()).findFirst().orElse(null);
     if (existing != null) {
       int index = episodeNumbers.indexOf(existing);
       episodeNumbers.remove(existing);
