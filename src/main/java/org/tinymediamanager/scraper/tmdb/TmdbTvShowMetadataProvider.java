@@ -637,7 +637,14 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
 
         MediaEpisodeGroup.EpisodeGroup eg = mapEpisodeGroup(episodeGroup.type);
         if (eg != null) {
-          md.addEpisodeGroup(new MediaEpisodeGroup(eg, episodeGroup.name));
+          MediaEpisodeGroup mediaEpisodeGroup = new MediaEpisodeGroup(eg, episodeGroup.name);
+          md.addEpisodeGroup(mediaEpisodeGroup);
+          // season titles
+          for (TvEpisodeGroupSeason season : ListUtils.nullSafe(episodeGroup.groups)) {
+            if (StringUtils.isNotBlank(season.name)) {
+              md.addSeasonName(mediaEpisodeGroup, season.order, season.name);
+            }
+          }
         }
       }
     }
@@ -659,8 +666,8 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
           }
         }
 
-        md.addSeasonName(season.season_number, season.name);
-        md.addSeasonOverview(season.season_number, season.overview);
+        md.addSeasonName(MediaEpisodeGroup.DEFAULT_AIRED, season.season_number, season.name);
+        md.addSeasonOverview(MediaEpisodeGroup.DEFAULT_AIRED, season.season_number, season.overview);
       }
     }
 

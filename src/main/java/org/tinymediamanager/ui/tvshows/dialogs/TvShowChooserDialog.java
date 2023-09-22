@@ -567,10 +567,6 @@ public class TvShowChooserDialog extends TmmDialog implements ActionListener {
             md.clearMediaArt();
           }
 
-          // set scraped metadata
-          tvShowToScrape.setMetadata(md, tvShowScraperMetadataConfig, overwrite);
-          tvShowToScrape.setLastScraperId(model.getMediaScraper().getId());
-          tvShowToScrape.setLastScrapeLanguage(model.getLanguage().name());
           if (cbEpisodeGroup.getSelectedItem() instanceof MediaEpisodeGroup episodeGroup) {
             tvShowToScrape.setEpisodeGroup(episodeGroup);
           }
@@ -614,6 +610,11 @@ public class TvShowChooserDialog extends TmmDialog implements ActionListener {
           }
 
           tvShowToScrape.setEpisodeGroups(episodeGroups);
+
+          // set scraped metadata
+          tvShowToScrape.setMetadata(md, tvShowScraperMetadataConfig, overwrite);
+          tvShowToScrape.setLastScraperId(model.getMediaScraper().getId());
+          tvShowToScrape.setLastScrapeLanguage(model.getLanguage().name());
 
           // get the episode list for display?
           if (TvShowModuleManager.getInstance().getSettings().isDisplayMissingEpisodes()) {

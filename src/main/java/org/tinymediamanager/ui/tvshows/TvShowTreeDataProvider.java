@@ -47,6 +47,7 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
   private final TmmTreeNode                     root       = new TmmTreeNode(new Object(), this);
 
   private final PropertyChangeListener          tvShowPropertyChangeListener;
+  private final PropertyChangeListener seasonPropertyChangeListener;
   private final PropertyChangeListener          episodePropertyChangeListener;
 
   private final TvShowList                      tvShowList = TvShowModuleManager.getInstance().getTvShowList();
@@ -112,6 +113,16 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
 
         default:
           nodeChanged(evt.getSource());
+          break;
+      }
+    };
+
+    seasonPropertyChangeListener = evt -> {
+      TvShowSeason season = (TvShowSeason) evt.getSource();
+
+      switch (evt.getPropertyName()) {
+        default:
+          nodeChanged(season);
           break;
       }
     };
@@ -249,6 +260,9 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
           putNodeToCache(season, node);
           nodes.add(node);
         }
+
+        // add a propertychangelistener for this seasib
+        season.addPropertyChangeListener(seasonPropertyChangeListener);
       }
       return nodes;
     }
@@ -331,6 +345,10 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
     TmmTreeNode node = new TvShowSeasonTreeNode(season, this);
     putNodeToCache(season, node);
     firePropertyChange(NODE_INSERTED, null, node);
+
+    // add a propertychangelistener for this season
+    season.addPropertyChangeListener(seasonPropertyChangeListener);
+
     return node;
   }
 
@@ -370,8 +388,8 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
   }
 
   private void removeTvShowSeason(TvShowSeason season) {
-    // remove the propertychangelistener from this episode
-    season.removePropertyChangeListener(episodePropertyChangeListener);
+    // remove the propertychangelistener from this season
+    season.removePropertyChangeListener(seasonPropertyChangeListener);
 
     TmmTreeNode cachedNode = removeNodeFromCache(season);
     if (cachedNode == null) {
