@@ -16,7 +16,6 @@
 package org.tinymediamanager.ui.tvshows.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.List;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
@@ -28,6 +27,7 @@ import org.tinymediamanager.core.tvshow.entities.TvShowEpisode;
 import org.tinymediamanager.core.tvshow.entities.TvShowSeason;
 import org.tinymediamanager.ui.MainWindow;
 import org.tinymediamanager.ui.actions.TmmAction;
+import org.tinymediamanager.ui.tvshows.TvShowSelectionModel.SelectedObjects;
 import org.tinymediamanager.ui.tvshows.TvShowUIModule;
 
 public class DebugDumpShowAction extends TmmAction {
@@ -38,34 +38,27 @@ public class DebugDumpShowAction extends TmmAction {
 
   @Override
   protected void processAction(ActionEvent e) {
-    // do not handle multi/intermixed content...
 
-    // check season first, since getSeasons() always returns episodes too
-    final Set<TvShowSeason> selectedSeason = TvShowUIModule.getInstance().getSelectionModel().getSelectedObjects(true, true).getSeasons();
-    if (!selectedSeason.isEmpty()) {
-      for (TvShowSeason se : selectedSeason) {
-        TvShowModuleManager.getInstance().dump(se);
-      }
+    SelectedObjects sel = TvShowUIModule.getInstance().getSelectionModel().getSelectedObjects(true, true);
+    if (sel.isEmpty()) {
+      JOptionPane.showMessageDialog(MainWindow.getInstance(), TmmResourceBundle.getString("tmm.nothingselected"));
+      return;
     }
-    else {
-      // we clicked on show/season
-      final List<TvShowEpisode> selectedEpisodes = TvShowUIModule.getInstance().getSelectionModel().getSelectedEpisodes();
-      if (!selectedEpisodes.isEmpty()) {
-        for (TvShowEpisode ep : selectedEpisodes) {
-          TvShowModuleManager.getInstance().dump(ep);
-        }
-      }
-      else {
-        // recurse complete show
-        final List<TvShow> selectedTvShows = TvShowUIModule.getInstance().getSelectionModel().getSelectedTvShows(true);
-        if (selectedTvShows.isEmpty()) {
-          JOptionPane.showMessageDialog(MainWindow.getInstance(), TmmResourceBundle.getString("tmm.nothingselected"));
-          return;
-        }
-        for (TvShow tvShow : selectedTvShows) {
-          TvShowModuleManager.getInstance().dump(tvShow);
-        }
-      }
+
+    Set<TvShow> selectedTvShows = sel.getTvShows();
+    for (TvShow tvShow : selectedTvShows) {
+      TvShowModuleManager.getInstance().dump(tvShow);
     }
+
+    Set<TvShowSeason> selectedSeason = sel.getSeasons();
+    for (TvShowSeason se : selectedSeason) {
+      TvShowModuleManager.getInstance().dump(se);
+    }
+
+    Set<TvShowEpisode> selectedEpisodes = sel.getEpisodes();
+    for (TvShowEpisode ep : selectedEpisodes) {
+      TvShowModuleManager.getInstance().dump(ep);
+    }
+
   }
 }
