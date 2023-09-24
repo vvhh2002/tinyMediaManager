@@ -446,9 +446,16 @@ public class TvShow extends MediaEntity implements IMediaInformation {
     this.episodeGroup = newValue;
     firePropertyChange(Constants.EPISODE_GROUP, oldValue, newValue);
 
-    // also fire the event for all episodes too
-    for (TvShowEpisode episode : getEpisodesForDisplay()) {
-      episode.firePropertyChange(Constants.EPISODE_GROUP, oldValue, newValue);
+    // also rebuild the seasons and fire the event for all episodes too
+    if (!oldValue.equals(newValue)) {
+      for (TvShowEpisode episode : getEpisodesForDisplay()) {
+        // remove from old season
+        getOrCreateSeason(episode.getSeason(oldValue)).removeEpisode(episode);
+
+        // add to new season
+        getOrCreateSeason(episode.getSeason()).addEpisode(episode);
+        episode.firePropertyChange(Constants.EPISODE_GROUP, oldValue, newValue);
+      }
     }
   }
 
@@ -478,7 +485,8 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   /**
    * set all season names
    *
-   * @param newValue a {@link Map} containing all season names
+   * @param newValue
+   *          a {@link Map} containing all season names
    */
   public void setSeasonNames(Map<MediaEpisodeGroup, Map<Integer, String>> newValue) {
     seasonNames.clear();
@@ -500,7 +508,8 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   /**
    * get the season name for the chosen {@link MediaEpisodeGroup}
    *
-   * @param season the season to get the name for
+   * @param season
+   *          the season to get the name for
    * @return the found season name or an empty {@link String}
    */
   String getSeasonName(int season) {
@@ -518,7 +527,8 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   /**
    * set all season overviews
    *
-   * @param newValue a {@link Map} containing all season overviews
+   * @param newValue
+   *          a {@link Map} containing all season overviews
    */
   public void setSeasonOverviews(Map<MediaEpisodeGroup, Map<Integer, String>> newValue) {
     seasonOverviews.clear();
@@ -540,7 +550,8 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   /**
    * get the season overview for the chosen {@link MediaEpisodeGroup}
    *
-   * @param season the season to get the overview for
+   * @param season
+   *          the season to get the overview for
    * @return the found season name or an empty {@link String}
    */
   String getSeasonOverview(int season) {
@@ -663,7 +674,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    * @return a {@link List} of all episodes
    */
   public List<TvShowEpisode> getEpisodesForSeason(int season) {
-    return episodes.stream().filter(episode -> episode.getSeason() == season).collect(Collectors.toList());
+    return episodes.stream().filter(episode -> episode.getSeason() == season).toList();
   }
 
   /**

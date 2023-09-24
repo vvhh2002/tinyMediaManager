@@ -36,6 +36,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -298,7 +299,7 @@ public class TvShowEditorDialog extends TmmDialog {
 
       // calculate distribution of the episodes over episode groups
       EpisodeGroupContainer selectedEpisodeGroup = null;
-      Map<MediaEpisodeGroup.EpisodeGroup, EpisodeGroupContainer> episodeGroups = new HashMap<>();
+      Map<MediaEpisodeGroup.EpisodeGroup, EpisodeGroupContainer> episodeGroups = new EnumMap<>(MediaEpisodeGroup.EpisodeGroup.class);
       for (TvShowEpisode episode : tvShowToEdit.getEpisodes()) {
         for (Map.Entry<MediaEpisodeGroup.EpisodeGroup, MediaEpisodeNumber> entry : episode.getEpisodeNumbers().entrySet()) {
           if (entry.getValue().containsAnyNumber()) {
@@ -306,7 +307,7 @@ public class TvShowEditorDialog extends TmmDialog {
             if (container == null) {
               container = new EpisodeGroupContainer(entry.getValue().episodeGroup());
 
-              if (tvShowToEdit.getEpisodeGroup() == entry.getValue().episodeGroup()) {
+              if (tvShowToEdit.getEpisodeGroup().equals(entry.getValue().episodeGroup())) {
                 selectedEpisodeGroup = container;
               }
               episodeGroups.put(entry.getKey(), container);
