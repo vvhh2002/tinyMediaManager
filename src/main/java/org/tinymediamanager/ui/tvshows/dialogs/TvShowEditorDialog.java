@@ -36,8 +36,8 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -299,18 +299,18 @@ public class TvShowEditorDialog extends TmmDialog {
 
       // calculate distribution of the episodes over episode groups
       EpisodeGroupContainer selectedEpisodeGroup = null;
-      Map<MediaEpisodeGroup.EpisodeGroup, EpisodeGroupContainer> episodeGroups = new EnumMap<>(MediaEpisodeGroup.EpisodeGroup.class);
+      Map<MediaEpisodeGroup, EpisodeGroupContainer> episodeGroups = new LinkedHashMap<>();
       for (TvShowEpisode episode : tvShowToEdit.getEpisodes()) {
-        for (Map.Entry<MediaEpisodeGroup.EpisodeGroup, MediaEpisodeNumber> entry : episode.getEpisodeNumbers().entrySet()) {
-          if (entry.getValue().containsAnyNumber()) {
-            EpisodeGroupContainer container = episodeGroups.get(entry.getKey());
+        for (MediaEpisodeNumber mediaEpisodeNumber : episode.getEpisodeNumbers()) {
+          if (mediaEpisodeNumber.containsAnyNumber()) {
+            EpisodeGroupContainer container = episodeGroups.get(mediaEpisodeNumber.episodeGroup());
             if (container == null) {
-              container = new EpisodeGroupContainer(entry.getValue().episodeGroup());
+              container = new EpisodeGroupContainer(mediaEpisodeNumber.episodeGroup());
 
-              if (tvShowToEdit.getEpisodeGroup().equals(entry.getValue().episodeGroup())) {
+              if (tvShowToEdit.getEpisodeGroup().equals(mediaEpisodeNumber.episodeGroup())) {
                 selectedEpisodeGroup = container;
               }
-              episodeGroups.put(entry.getKey(), container);
+              episodeGroups.put(mediaEpisodeNumber.episodeGroup(), container);
             }
 
             container.numberOfEpisodes++;
@@ -2006,7 +2006,7 @@ public class TvShowEditorDialog extends TmmDialog {
 
     @Override
     public String toString() {
-      String localizedEnumName = TmmResourceBundle.getString("episodeGroup." + episodeGroup.getEpisodeGroup().name().toLowerCase(Locale.ROOT));
+      String localizedEnumName = TmmResourceBundle.getString("episodeGroup." + episodeGroup.getEpisodeGroupType().name().toLowerCase(Locale.ROOT));
       String episodeGroupName;
       if (StringUtils.isNotBlank(episodeGroup.getName())) {
         episodeGroupName = episodeGroup.getName() + " (" + localizedEnumName + ")";

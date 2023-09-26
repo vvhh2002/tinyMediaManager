@@ -25,11 +25,6 @@ import static org.tinymediamanager.scraper.entities.MediaArtwork.MediaArtworkTyp
 import static org.tinymediamanager.scraper.entities.MediaArtwork.MediaArtworkType.KEYART;
 import static org.tinymediamanager.scraper.entities.MediaArtwork.MediaArtworkType.POSTER;
 import static org.tinymediamanager.scraper.entities.MediaArtwork.MediaArtworkType.THUMB;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.ABSOLUTE;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.AIRED;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.ALTERNATE;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.DISPLAY;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.DVD;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -573,43 +568,7 @@ public class TvShowChooserDialog extends TmmDialog implements ActionListener {
           else {
             tvShowToScrape.setEpisodeGroup(MediaEpisodeGroup.DEFAULT_AIRED);
           }
-
-          // prepare the episode groups to be written (same logic as in TvShowEpisode!!)
-          List<MediaEpisodeGroup> episodeGroups = new ArrayList<>();
-
-          // AIRED, ABSOLUTE and DISPLAY are seen as unique: just add them directly
-          model.getEpisodeGroups().forEach(group -> {
-            if (group.getEpisodeGroup() == AIRED || group.getEpisodeGroup() == ABSOLUTE || group.getEpisodeGroup() == DISPLAY) {
-              episodeGroups.add(group);
-            }
-          });
-
-          // DVD could be duplicated (DVD and BR), so we add the desired one (if chosen) or the first one
-          if (tvShowToScrape.getEpisodeGroup().getEpisodeGroup() == DVD) {
-            model.getEpisodeGroups()
-                    .stream()
-                    .filter(mediaEpisodeGroup -> mediaEpisodeGroup == tvShowToScrape.getEpisodeGroup())
-                    .findFirst()
-                    .ifPresent(episodeGroups::add);
-          } else {
-            for (var episodeGroup : model.getEpisodeGroups()) {
-              if (episodeGroup.getEpisodeGroup() == DVD) {
-                episodeGroups.add(episodeGroup);
-                break;
-              }
-            }
-          }
-
-          // write ALTERNATE only on demand
-          if (tvShowToScrape.getEpisodeGroup().getEpisodeGroup() == ALTERNATE) {
-            model.getEpisodeGroups()
-                    .stream()
-                    .filter(mediaEpisodeGroup -> mediaEpisodeGroup == tvShowToScrape.getEpisodeGroup())
-                    .findFirst()
-                    .ifPresent(episodeGroups::add);
-          }
-
-          tvShowToScrape.setEpisodeGroups(episodeGroups);
+          tvShowToScrape.setEpisodeGroups(model.getEpisodeGroups());
 
           // set scraped metadata
           tvShowToScrape.setMetadata(md, tvShowScraperMetadataConfig, overwrite);

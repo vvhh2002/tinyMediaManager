@@ -37,15 +37,15 @@ import net.miginfocom.swing.MigLayout;
  * @author Manuel Laggner
  */
 public class TvShowEpisodeNumberEditorPanel extends JPanel implements IModalPopupPanel {
-  private final JComboBox<MediaEpisodeGroup.EpisodeGroup> cbEpisodeGroup;
-  private final JSpinner                                  spEpisode;
-  private final JSpinner                                  spSeason;
+    private final JComboBox<MediaEpisodeGroup.EpisodeGroupType> cbEpisodeGroup;
+    private final JSpinner spEpisode;
+    private final JSpinner spSeason;
 
-  private final JButton                                   btnClose;
-  private final JButton                                   btnCancel;
+    private final JButton btnClose;
+    private final JButton btnCancel;
 
-  private boolean                                         cancel = false;
-  private MediaEpisodeNumber                              episodeNumber;
+    private boolean cancel = false;
+    private MediaEpisodeNumber episodeNumber;
 
   public TvShowEpisodeNumberEditorPanel(MediaEpisodeNumber episodeNumber) {
     super();
@@ -56,7 +56,7 @@ public class TvShowEpisodeNumberEditorPanel extends JPanel implements IModalPopu
         JLabel episodeGroupT = new JLabel(TmmResourceBundle.getString("metatag.episode.group"));
         add(episodeGroupT, "cell 0 0,alignx trailing");
 
-        cbEpisodeGroup = new JComboBox<>(MediaEpisodeGroup.EpisodeGroup.values());
+          cbEpisodeGroup = new JComboBox<>(MediaEpisodeGroup.EpisodeGroupType.values());
         add(cbEpisodeGroup, "cell 1 0,growx");
       }
       {
@@ -86,8 +86,8 @@ public class TvShowEpisodeNumberEditorPanel extends JPanel implements IModalPopu
 
         btnClose = new JButton(TmmResourceBundle.getString("Button.save"));
         btnClose.addActionListener(e -> {
-          if (cbEpisodeGroup.getSelectedItem() instanceof MediaEpisodeGroup.EpisodeGroup episodeGroup) {
-            this.episodeNumber = new MediaEpisodeNumber(new MediaEpisodeGroup(episodeGroup), (Integer) spSeason.getValue(),
+            if (cbEpisodeGroup.getSelectedItem() instanceof MediaEpisodeGroup.EpisodeGroupType episodeGroupType) {
+                this.episodeNumber = new MediaEpisodeNumber(new MediaEpisodeGroup(episodeGroupType), (Integer) spSeason.getValue(),
                 (Integer) spEpisode.getValue());
           }
 

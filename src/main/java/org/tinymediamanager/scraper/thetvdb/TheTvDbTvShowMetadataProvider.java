@@ -16,9 +16,7 @@
 package org.tinymediamanager.scraper.thetvdb;
 
 import static org.tinymediamanager.scraper.MediaMetadata.TVDB;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.ABSOLUTE;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.AIRED;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.DVD;
+import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType.AIRED;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -102,7 +100,8 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
   private static final CacheMap<String, List<MediaMetadata>> EPISODE_LIST_CACHE_MAP = new CacheMap<>(600, 5);
   private static final CacheMap<String, MediaMetadata>       EPISODE_CACHE_MAP      = new CacheMap<>(600, 5);
 
-  private static final MediaEpisodeGroup                     ALTERNATE              = new MediaEpisodeGroup(MediaEpisodeGroup.EpisodeGroup.ALTERNATE);
+  private static final MediaEpisodeGroup ALTERNATE = new MediaEpisodeGroup(
+          MediaEpisodeGroup.EpisodeGroupType.ALTERNATE);
 
   @Override
   protected MediaProviderInfo createMediaProviderInfo() {
@@ -319,9 +318,9 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
       }
 
       if (seasonBaseRecord != null) {
-        MediaEpisodeGroup.EpisodeGroup episodeGroup = mapEpisodeGroup(seasonTypeRecord.type);
-        if (episodeGroup != null) {
-          MediaEpisodeGroup mediaEpisodeGroup = new MediaEpisodeGroup(episodeGroup, seasonTypeRecord.name);
+        MediaEpisodeGroup.EpisodeGroupType episodeGroupType = mapEpisodeGroup(seasonTypeRecord.type);
+        if (episodeGroupType != null) {
+          MediaEpisodeGroup mediaEpisodeGroup = new MediaEpisodeGroup(episodeGroupType, seasonTypeRecord.name);
           md.addEpisodeGroup(mediaEpisodeGroup);
 
           // season names/plot
@@ -443,7 +442,7 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
     if (foundEpisode == null) {
       for (MediaMetadata episode : episodes) {
         MediaEpisodeNumber episodeNumber = episode.getEpisodeNumber(episodeGroup);
-        if (episodeNumber == null && episodeGroup.getEpisodeGroup() == AIRED) {
+        if (episodeNumber == null && episodeGroup.getEpisodeGroupType() == AIRED) {
           // legacy
           episodeNumber = episode.getEpisodeNumber(AIRED);
         }
@@ -502,13 +501,7 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
     MediaMetadata md = new MediaMetadata(getId());
     md.setScrapeOptions(options);
     md.setId(getId(), episode.id);
-    md.setEpisodeNumber(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, episode.seasonNumber, episode.episodeNumber));
-    if (foundEpisode.getEpisodeNumber(DVD) != null) {
-      md.setEpisodeNumber(foundEpisode.getEpisodeNumber(DVD));
-    }
-    if (foundEpisode.getEpisodeNumber(ABSOLUTE) != null) {
-      md.setEpisodeNumber(foundEpisode.getEpisodeNumber(ABSOLUTE));
-    }
+    md.setEpisodeNumbers(foundEpisode.getEpisodeNumbers());
 
     if (MetadataUtil.unboxInteger(episode.airsBeforeSeason, -1) > -1 || MetadataUtil.unboxInteger(episode.airsBeforeEpisode, -1) > -1) {
       md.setEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, MetadataUtil.unboxInteger(episode.airsBeforeSeason),
@@ -793,7 +786,7 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
       // now merge all episode records by the ids (to merge the different episode numbers)
       Map<Integer, MediaMetadata> episodeMap = new HashMap<>();
 
-      for (Map.Entry<MediaEpisodeGroup, List<EpisodeBaseRecord>> entry : eps.entrySet()) {
+      for (var entry : eps.entrySet()) {
         MediaEpisodeGroup episodeGroup = entry.getKey();
         for (EpisodeBaseRecord ep : entry.getValue()) {
           MediaMetadata fromMap = episodeMap.get(ep.id);
@@ -1080,12 +1073,12 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
     }
   }
 
-  private MediaEpisodeGroup.EpisodeGroup mapEpisodeGroup(SeasonType type) {
+  private MediaEpisodeGroup.EpisodeGroupType mapEpisodeGroup(SeasonType type) {
     return switch (type) {
-      case DEFAULT, OFFICIAL -> MediaEpisodeGroup.EpisodeGroup.AIRED;
-      case ABSOLUTE -> MediaEpisodeGroup.EpisodeGroup.ABSOLUTE;
-      case DVD -> MediaEpisodeGroup.EpisodeGroup.DVD;
-      case ALTERNATE, REGIONAL -> MediaEpisodeGroup.EpisodeGroup.ALTERNATE;
+      case DEFAULT, OFFICIAL -> MediaEpisodeGroup.EpisodeGroupType.AIRED;
+      case ABSOLUTE -> MediaEpisodeGroup.EpisodeGroupType.ABSOLUTE;
+      case DVD -> MediaEpisodeGroup.EpisodeGroupType.DVD;
+      case ALTERNATE, REGIONAL -> MediaEpisodeGroup.EpisodeGroupType.ALTERNATE;
     };
   }
 }

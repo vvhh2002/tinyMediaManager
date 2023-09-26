@@ -16,7 +16,7 @@ import org.tinymediamanager.core.entities.MediaRating;
 import org.tinymediamanager.scraper.MediaMetadata;
 import org.tinymediamanager.scraper.entities.MediaArtwork;
 import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
-import org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup;
+import org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType;
 import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 import org.tinymediamanager.scraper.util.ListUtils;
 import org.tinymediamanager.scraper.util.MetadataUtil;
@@ -55,7 +55,7 @@ public class ImdbEpisodeList {
         md.setPlot(ep.plot);
         md.setId(Constants.IMDB, ep.id);
 
-        MediaEpisodeGroup eg = new MediaEpisodeGroup(EpisodeGroup.AIRED);
+          MediaEpisodeGroup eg = new MediaEpisodeGroup(EpisodeGroupType.AIRED);
         int s = MetadataUtil.parseInt(ep.season, -1);
         int e = MetadataUtil.parseInt(ep.episode, -1);
         if (e < 0 || s < 0) {

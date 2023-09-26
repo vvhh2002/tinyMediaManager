@@ -1073,14 +1073,14 @@ public class MediaMetadata {
   /**
    * Get the {@link MediaEpisodeNumber}
    *
-   * @param episodeGroup
-   *          the {@link MediaEpisodeGroup.EpisodeGroup} to get the episode number for
+   * @param episodeGroupType
+   *          the {@link MediaEpisodeGroup.EpisodeGroupType} to get the episode number for
    * @return the {@link MediaEpisodeNumber} or null
    */
-  public MediaEpisodeNumber getEpisodeNumber(@NotNull MediaEpisodeGroup.EpisodeGroup episodeGroup) {
+  public MediaEpisodeNumber getEpisodeNumber(@NotNull MediaEpisodeGroup.EpisodeGroupType episodeGroupType) {
     // match the first available episode group
     for (Map.Entry<MediaEpisodeGroup, MediaEpisodeNumber> entry : episodeNumbers.entrySet()) {
-      if (entry.getKey().getEpisodeGroup() == episodeGroup) {
+      if (entry.getKey().getEpisodeGroupType() == episodeGroupType) {
         return entry.getValue();
       }
     }
@@ -1092,7 +1092,7 @@ public class MediaMetadata {
    * Set the episode number
    *
    * @param episodeGroup
-   *          the {@link MediaEpisodeGroup.EpisodeGroup} this episode number belongs to
+   *          the {@link MediaEpisodeGroup.EpisodeGroupType} this episode number belongs to
    * @param season
    *          the season
    * @param episode

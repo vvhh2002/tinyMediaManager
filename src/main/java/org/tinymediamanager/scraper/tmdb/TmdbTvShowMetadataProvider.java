@@ -22,7 +22,7 @@ import static org.tinymediamanager.core.entities.Person.Type.WRITER;
 import static org.tinymediamanager.scraper.MediaMetadata.IMDB;
 import static org.tinymediamanager.scraper.MediaMetadata.TMDB;
 import static org.tinymediamanager.scraper.MediaMetadata.TVDB;
-import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroup.AIRED;
+import static org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType.AIRED;
 import static org.tinymediamanager.scraper.util.MediaIdUtil.isValidImdbId;
 
 import java.io.IOException;
@@ -333,7 +333,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
             throw new HttpException(episodeGroupsResponse.code(), episodeGroupsResponse.message());
           }
 
-          MediaEpisodeGroup.EpisodeGroup eg = mapEpisodeGroup(episodeGroup.type);
+          MediaEpisodeGroup.EpisodeGroupType eg = mapEpisodeGroup(episodeGroup.type);
           if (eg != null) {
             episodeGroups.put(new MediaEpisodeGroup(eg, episodeGroup.name), episodeGroupsResponse.body().groups);
           }
@@ -635,7 +635,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
           continue;
         }
 
-        MediaEpisodeGroup.EpisodeGroup eg = mapEpisodeGroup(episodeGroup.type);
+        MediaEpisodeGroup.EpisodeGroupType eg = mapEpisodeGroup(episodeGroup.type);
         if (eg != null) {
           MediaEpisodeGroup mediaEpisodeGroup = new MediaEpisodeGroup(eg, episodeGroup.name);
           md.addEpisodeGroup(mediaEpisodeGroup);
@@ -787,7 +787,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
     if (episodeMediaMetadata == null && seasonNr > -1 && episodeNr > -1) {
       for (MediaMetadata episode : episodes) {
         MediaEpisodeNumber episodeNumber = episode.getEpisodeNumber(options.getEpisodeGroup());
-        if (episodeNumber == null && options.getEpisodeGroup().getEpisodeGroup() == AIRED) {
+        if (episodeNumber == null && options.getEpisodeGroup().getEpisodeGroupType() == AIRED) {
           // legacy
           episodeNumber = episode.getEpisodeNumber(AIRED);
         }
@@ -1513,13 +1513,13 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
     return result;
   }
 
-  private MediaEpisodeGroup.EpisodeGroup mapEpisodeGroup(int type) {
+  private MediaEpisodeGroup.EpisodeGroupType mapEpisodeGroup(int type) {
     return switch (type) {
       // originally aired, but this results in a _second_ aired order which we cannot handle. We morph this is to alternate
-      case 1 -> MediaEpisodeGroup.EpisodeGroup.ALTERNATE;
-      case 2 -> MediaEpisodeGroup.EpisodeGroup.ABSOLUTE;
-      case 3 -> MediaEpisodeGroup.EpisodeGroup.DVD;
-      case 4, 5, 6, 7 -> MediaEpisodeGroup.EpisodeGroup.ALTERNATE;
+      case 1 -> MediaEpisodeGroup.EpisodeGroupType.ALTERNATE;
+      case 2 -> MediaEpisodeGroup.EpisodeGroupType.ABSOLUTE;
+      case 3 -> MediaEpisodeGroup.EpisodeGroupType.DVD;
+      case 4, 5, 6, 7 -> MediaEpisodeGroup.EpisodeGroupType.ALTERNATE;
       default -> null;
     };
   }

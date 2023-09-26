@@ -58,7 +58,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -169,14 +168,11 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   @JsonProperty
   private final List<MediaTrailer> trailer = new CopyOnWriteArrayList<>();
   @JsonProperty
-  private final Map<MediaEpisodeGroup.EpisodeGroup, MediaEpisodeGroup> episodeGroups = new EnumMap<>(
-      MediaEpisodeGroup.EpisodeGroup.class);
+  private final List<MediaEpisodeGroup> episodeGroups = new CopyOnWriteArrayList<>();
   @JsonProperty
-  private final Map<MediaEpisodeGroup.EpisodeGroup, Map<Integer, String>> seasonNames = new EnumMap<>(
-          MediaEpisodeGroup.EpisodeGroup.class);
+  private final Map<MediaEpisodeGroup, Map<Integer, String>> seasonNames = new HashMap<>();
   @JsonProperty
-  private final Map<MediaEpisodeGroup.EpisodeGroup, Map<Integer, String>> seasonOverviews = new EnumMap<>(
-          MediaEpisodeGroup.EpisodeGroup.class);
+  private final Map<MediaEpisodeGroup, Map<Integer, String>> seasonOverviews = new HashMap<>();
 
   private final List<TvShowSeason> seasons = new CopyOnWriteArrayList<>();
   private final List<TvShowEpisode> episodes = new CopyOnWriteArrayList<>();
@@ -326,7 +322,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
     setGenres(other.genres);
     setActors(other.actors);
     setExtraFanartUrls(other.extraFanartUrls);
-    setEpisodeGroups(other.episodeGroups.values());
+    setEpisodeGroups(other.episodeGroups);
 
     for (var entry : other.seasonNames.entrySet()) {
       seasonNames.putIfAbsent(entry.getKey(), entry.getValue());
@@ -465,20 +461,35 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    * @return a {@link List} of all names {@link MediaEpisodeGroup}s
    */
   public List<MediaEpisodeGroup> getEpisodeGroups() {
-    return new ArrayList<>(episodeGroups.values());
+    return Collections.unmodifiableList(episodeGroups);
   }
 
   /**
    * set the list of "named" {@link MediaEpisodeGroup}s for this TV show
    *
-   * @param newValue
+   * @param newValues
    *          the {@link List} of all named {@link MediaEpisodeGroup}s
    */
-  public void setEpisodeGroups(Collection<MediaEpisodeGroup> newValue) {
+  public void setEpisodeGroups(Collection<MediaEpisodeGroup> newValues) {
     episodeGroups.clear();
-    for (MediaEpisodeGroup eg : newValue) {
-      episodeGroups.putIfAbsent(eg.getEpisodeGroup(), eg);
+
+    // sort by episode groups (same order as in MediaEpisodeGroup.EpisodeGroup)
+    for (MediaEpisodeGroup.EpisodeGroupType eg : MediaEpisodeGroup.EpisodeGroupType.values()) {
+      // special logic: the chosen episode group must be the first one in the list
+      if (episodeGroup != null && episodeGroup.getEpisodeGroupType() == eg) {
+        if (newValues.contains(episodeGroup)) {
+          episodeGroups.add(episodeGroup);
+        }
+      }
+
+      // add all (remaining) episode numbers for this type
+      newValues.forEach(group -> {
+        if (group.getEpisodeGroupType() == eg && !episodeGroups.contains(group)) {
+          episodeGroups.add(group);
+        }
+      });
     }
+
     firePropertyChange("episodeGroups", null, episodeGroups);
   }
 
@@ -491,7 +502,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   public void setSeasonNames(Map<MediaEpisodeGroup, Map<Integer, String>> newValue) {
     seasonNames.clear();
     for (var entry : newValue.entrySet()) {
-      seasonNames.putIfAbsent(entry.getKey().getEpisodeGroup(), entry.getValue());
+      seasonNames.putIfAbsent(entry.getKey(), entry.getValue());
     }
     firePropertyChange("seasonNames", null, seasonNames);
   }
@@ -501,7 +512,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    *
    * @return a {@link Map} containing all season names
    */
-  public Map<MediaEpisodeGroup.EpisodeGroup, Map<Integer, String>> getSeasonNames() {
+  public Map<MediaEpisodeGroup, Map<Integer, String>> getSeasonNames() {
     return Collections.unmodifiableMap(seasonNames);
   }
 
@@ -513,7 +524,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    * @return the found season name or an empty {@link String}
    */
   String getSeasonName(int season) {
-    Map<Integer, String> seasonNamesForEpisodeGroup = seasonNames.get(episodeGroup.getEpisodeGroup());
+    Map<Integer, String> seasonNamesForEpisodeGroup = seasonNames.get(episodeGroup);
     if (seasonNamesForEpisodeGroup != null) {
       String seasonName = seasonNamesForEpisodeGroup.get(season);
       if (StringUtils.isNotBlank(seasonName)) {
@@ -533,7 +544,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   public void setSeasonOverviews(Map<MediaEpisodeGroup, Map<Integer, String>> newValue) {
     seasonOverviews.clear();
     for (var entry : newValue.entrySet()) {
-      seasonOverviews.putIfAbsent(entry.getKey().getEpisodeGroup(), entry.getValue());
+      seasonOverviews.putIfAbsent(entry.getKey(), entry.getValue());
     }
     firePropertyChange("seasonOverviews", null, seasonOverviews);
   }
@@ -543,7 +554,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    *
    * @return a {@link Map} containing all season overviews
    */
-  public Map<MediaEpisodeGroup.EpisodeGroup, Map<Integer, String>> getSeasonOverviews() {
+  public Map<MediaEpisodeGroup, Map<Integer, String>> getSeasonOverviews() {
     return Collections.unmodifiableMap(seasonOverviews);
   }
 
@@ -555,7 +566,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    * @return the found season name or an empty {@link String}
    */
   String getSeasonOverview(int season) {
-    Map<Integer, String> seasonOverviewForEpisodeGroup = seasonOverviews.get(episodeGroup.getEpisodeGroup());
+    Map<Integer, String> seasonOverviewForEpisodeGroup = seasonOverviews.get(episodeGroup.getEpisodeGroupType());
     if (seasonOverviewForEpisodeGroup != null) {
       String seasonName = seasonOverviewForEpisodeGroup.get(season);
       if (StringUtils.isNotBlank(seasonName)) {
@@ -594,7 +605,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
   }
 
   public List<TvShowEpisode> getDummyEpisodes() {
-    return dummyEpisodes;
+    return Collections.unmodifiableList(dummyEpisodes);
   }
 
   public void setDummyEpisodes(List<TvShowEpisode> dummyEpisodes) {
@@ -1173,12 +1184,11 @@ public class TvShow extends MediaEntity implements IMediaInformation {
 
       for (var episodeGroupEntry : metadata.getSeasonNames().entrySet()) {
         // only set season names for stored episode groups
-        if (!episodeGroups.containsValue(episodeGroupEntry.getKey())) {
+        if (!episodeGroups.contains(episodeGroupEntry.getKey())) {
           continue;
         }
 
-        Map<Integer, String> seasonNamesForEpisodeGroup = seasonNames.computeIfAbsent(episodeGroupEntry.getKey().getEpisodeGroup(),
-                k -> new HashMap<>());
+        Map<Integer, String> seasonNamesForEpisodeGroup = seasonNames.computeIfAbsent(episodeGroupEntry.getKey(), k -> new HashMap<>());
 
         for (var entry : episodeGroupEntry.getValue().entrySet()) {
           // "Season XX" does not match (and not needed to set)
@@ -1216,12 +1226,11 @@ public class TvShow extends MediaEntity implements IMediaInformation {
 
       for (var episodeGroupEntry : metadata.getSeasonOverview().entrySet()) {
         // only set season names for stored episode groups
-        if (!episodeGroups.containsValue(episodeGroupEntry.getKey())) {
+        if (!episodeGroups.contains(episodeGroupEntry.getKey())) {
           continue;
         }
 
-        Map<Integer, String> seasonOverViewsForEpisodeGroup = seasonOverviews.computeIfAbsent(episodeGroupEntry.getKey().getEpisodeGroup(),
-                k -> new HashMap<>());
+        Map<Integer, String> seasonOverViewsForEpisodeGroup = seasonOverviews.computeIfAbsent(episodeGroupEntry.getKey(), k -> new HashMap<>());
 
         for (var entry : episodeGroupEntry.getValue().entrySet()) {
           if (overwriteExistingItems) {

@@ -122,8 +122,8 @@ public class TvShowEpisodeScrapeTask extends TmmTask {
       }
       else {
         // not found. Fall back to the default one
-        options.setId(MediaMetadata.SEASON_NR, String.valueOf(episode.getAiredSeason()));
-        options.setId(MediaMetadata.EPISODE_NR, String.valueOf(episode.getAiredEpisode()));
+        options.setId(MediaMetadata.SEASON_NR, episode.getAiredSeason());
+        options.setId(MediaMetadata.EPISODE_NR, episode.getAiredEpisode());
       }
 
       options.setTvShowIds(episode.getTvShow().getIds());

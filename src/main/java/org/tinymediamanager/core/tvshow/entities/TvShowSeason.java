@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jetbrains.annotations.NotNull;
 import org.tinymediamanager.core.MediaFileType;
@@ -65,8 +66,8 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
   private final int                 season;
 
   private TvShow                    tvShow        = null;
-  private final List<TvShowEpisode> episodes      = new ArrayList<>();
-  private final List<TvShowEpisode> dummyEpisodes = new ArrayList<>();
+  private final List<TvShowEpisode> episodes = new CopyOnWriteArrayList<>();
+  private final List<TvShowEpisode> dummyEpisodes = new CopyOnWriteArrayList<>();
 
   private PropertyChangeListener    listener;
 
@@ -311,10 +312,7 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
 
       for (TvShowEpisode episode : episodes) {
         if (episode.getSeason() > -1 && episode.getEpisode() > -1) {
-          availableEpisodes.add("A" + episode.getSeason() + "." + episode.getEpisode());
-        }
-        if (episode.getDvdSeason() > -1 && episode.getDvdEpisode() > -1) {
-          availableEpisodes.add("D" + episode.getSeason() + "." + episode.getEpisode());
+          availableEpisodes.add(episode.getSeason() + "." + episode.getEpisode());
         }
       }
 
@@ -324,8 +322,7 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
           continue;
         }
 
-        if (!availableEpisodes.contains("A" + episode.getSeason() + "." + episode.getEpisode())
-            && !availableEpisodes.contains("D" + episode.getDvdSeason() + "." + episode.getDvdEpisode())) {
+        if (!availableEpisodes.contains(episode.getSeason() + "." + episode.getEpisode())) {
           episodes.add(episode);
         }
       }
