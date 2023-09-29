@@ -50,6 +50,7 @@ import org.tinymediamanager.core.tvshow.connector.TvShowSeasonToEmbyConnector;
 import org.tinymediamanager.core.tvshow.filenaming.TvShowSeasonNfoNaming;
 import org.tinymediamanager.scraper.MediaMetadata;
 import org.tinymediamanager.scraper.entities.MediaArtwork.MediaArtworkType;
+import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -308,11 +309,12 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
     // mix in unavailable episodes if the user wants to
     if (TvShowModuleManager.getInstance().getSettings().isDisplayMissingEpisodes()) {
       // build up a set which holds a string representing the S/E indicator
-      Set<String> availableEpisodes = new HashSet<>();
+      Set<MediaEpisodeNumber> availableEpisodes = new HashSet<>();
 
       for (TvShowEpisode episode : episodes) {
-        if (episode.getSeason() > -1 && episode.getEpisode() > -1) {
-          availableEpisodes.add(episode.getSeason() + "." + episode.getEpisode());
+        MediaEpisodeNumber mediaEpisodeNumber = episode.getEpisodeNumber();
+        if (mediaEpisodeNumber != null) {
+          availableEpisodes.add(mediaEpisodeNumber);
         }
       }
 
@@ -322,11 +324,14 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
           continue;
         }
 
-        if (!availableEpisodes.contains(episode.getSeason() + "." + episode.getEpisode())) {
+        MediaEpisodeNumber mediaEpisodeNumber = episode.getEpisodeNumber();
+        if (mediaEpisodeNumber != null && !availableEpisodes.contains(mediaEpisodeNumber)) {
           episodes.add(episode);
         }
       }
     }
+
+    episodes.sort(Comparator.comparingInt(TvShowEpisode::getEpisode));
 
     return episodes;
   }

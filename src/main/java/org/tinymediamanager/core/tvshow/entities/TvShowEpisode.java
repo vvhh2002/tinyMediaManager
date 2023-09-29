@@ -526,10 +526,29 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
     }
   }
 
+  /**
+   * get the S/E number with the default {@link MediaEpisodeGroup}
+   *
+   * @return the S/E number (or null when not available)
+   */
+  public MediaEpisodeNumber getEpisodeNumber() {
+    return getEpisodeNumber(getEpisodeGroup());
+  }
+
+  /**
+   * get the S/E number for the given {@link MediaEpisodeGroup}
+   *
+   * @return the S/E number (or null when not available)
+   */
   public MediaEpisodeNumber getEpisodeNumber(@NotNull MediaEpisodeGroup episodeGroup) {
     return episodeNumbers.stream().filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().equals(episodeGroup)).findFirst().orElse(null);
   }
 
+  /**
+   * get the S/E number for the given {@link MediaEpisodeGroup.EpisodeGroupType}
+   *
+   * @return the S/E number (or null when not available)
+   */
   private MediaEpisodeNumber getEpisodeNumber(@NotNull MediaEpisodeGroup.EpisodeGroupType episodeGroupType) {
     return episodeNumbers.stream()
             .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().getEpisodeGroupType() == episodeGroupType)
