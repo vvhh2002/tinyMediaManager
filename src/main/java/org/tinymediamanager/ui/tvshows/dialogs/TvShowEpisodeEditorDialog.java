@@ -320,7 +320,8 @@ public class TvShowEpisodeEditorDialog extends TmmDialog {
             ModalPopupPanel popupPanel = createModalPopupPanel();
             popupPanel.setTitle(TmmResourceBundle.getString("episodenumber.edit"));
 
-            TvShowEpisodeNumberEditorPanel episodeNumberEditorPanel = new TvShowEpisodeNumberEditorPanel(episodeNumber);
+            TvShowEpisodeNumberEditorPanel episodeNumberEditorPanel = new TvShowEpisodeNumberEditorPanel(episodeNumber,
+                    episodeToEdit.getTvShow().getEpisodeGroups());
             popupPanel.setContent(episodeNumberEditorPanel);
             popupPanel.setOnCloseHandler(() -> {
               MediaEpisodeNumber episodeNumber1 = episodeNumberEditorPanel.getEpisodeNumber();
@@ -1122,7 +1123,7 @@ public class TvShowEpisodeEditorDialog extends TmmDialog {
       popupPanel.setTitle(TmmResourceBundle.getString("episodenumber.add"));
 
       TvShowEpisodeNumberEditorPanel episodeNumberEditorPanel = new TvShowEpisodeNumberEditorPanel(
-          new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, -1, -1));
+              new MediaEpisodeNumber(episodeToEdit.getTvShow().getEpisodeGroup(), -1, -1), episodeToEdit.getTvShow().getEpisodeGroups());
       popupPanel.setContent(episodeNumberEditorPanel);
       popupPanel.setOnCloseHandler(() -> {
         MediaEpisodeNumber episodeNumber = episodeNumberEditorPanel.getEpisodeNumber();

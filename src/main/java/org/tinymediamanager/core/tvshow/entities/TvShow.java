@@ -118,6 +118,7 @@ import org.tinymediamanager.scraper.entities.MediaArtwork;
 import org.tinymediamanager.scraper.entities.MediaArtwork.MediaArtworkType;
 import org.tinymediamanager.scraper.entities.MediaCertification;
 import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
+import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 import org.tinymediamanager.scraper.util.ListUtils;
 import org.tinymediamanager.scraper.util.StrgUtils;
 import org.tinymediamanager.scraper.util.TvUtils;
@@ -566,7 +567,7 @@ public class TvShow extends MediaEntity implements IMediaInformation {
    * @return the found season name or an empty {@link String}
    */
   String getSeasonOverview(int season) {
-    Map<Integer, String> seasonOverviewForEpisodeGroup = seasonOverviews.get(episodeGroup.getEpisodeGroupType());
+    Map<Integer, String> seasonOverviewForEpisodeGroup = seasonOverviews.get(episodeGroup);
     if (seasonOverviewForEpisodeGroup != null) {
       String seasonName = seasonOverviewForEpisodeGroup.get(season);
       if (StringUtils.isNotBlank(seasonName)) {
@@ -602,6 +603,13 @@ public class TvShow extends MediaEntity implements IMediaInformation {
 
     firePropertyChange(ADDED_EPISODE, null, episode);
     firePropertyChange(EPISODE_COUNT, oldValue, episodes.size());
+
+    // probably also add the episode group from this episode
+    for (MediaEpisodeNumber episodeNumber : episode.getEpisodeNumbers()) {
+      if (!episodeGroups.contains(episodeNumber.episodeGroup())) {
+        episodeGroups.add(episodeNumber.episodeGroup());
+      }
+    }
   }
 
   public List<TvShowEpisode> getDummyEpisodes() {
