@@ -100,8 +100,8 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
   private static final CacheMap<String, List<MediaMetadata>> EPISODE_LIST_CACHE_MAP = new CacheMap<>(600, 5);
   private static final CacheMap<String, MediaMetadata>       EPISODE_CACHE_MAP      = new CacheMap<>(600, 5);
 
-  private static final MediaEpisodeGroup ALTERNATE = new MediaEpisodeGroup(
-          MediaEpisodeGroup.EpisodeGroupType.ALTERNATE);
+  private static final MediaEpisodeGroup                     ALTERNATE              = new MediaEpisodeGroup(
+      MediaEpisodeGroup.EpisodeGroupType.ALTERNATE);
 
   @Override
   protected MediaProviderInfo createMediaProviderInfo() {
@@ -307,59 +307,51 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
     }
 
     // episode groups
-    for (SeasonTypeRecord seasonTypeRecord : ListUtils.nullSafe(show.seasonTypes)) {
-      // first check, if there is any episode mapped in this season type
-      SeasonBaseRecord seasonBaseRecord = null;
-      for (SeasonBaseRecord season : ListUtils.nullSafe(show.seasons)) {
-        if (season.type.type == seasonTypeRecord.type) {
-          seasonBaseRecord = season;
-          break;
-        }
-      }
+    for (SeasonBaseRecord seasonBaseRecord : ListUtils.nullSafe(show.seasons)) {
+      MediaEpisodeGroup.EpisodeGroupType episodeGroupType = mapEpisodeGroup(seasonBaseRecord.type.type);
+      if (episodeGroupType != null) {
+        MediaEpisodeGroup mediaEpisodeGroup = new MediaEpisodeGroup(episodeGroupType, seasonBaseRecord.type.name);
+        md.addEpisodeGroup(mediaEpisodeGroup);
 
-      if (seasonBaseRecord != null) {
-        MediaEpisodeGroup.EpisodeGroupType episodeGroupType = mapEpisodeGroup(seasonTypeRecord.type);
-        if (episodeGroupType != null) {
-          MediaEpisodeGroup mediaEpisodeGroup = new MediaEpisodeGroup(episodeGroupType, seasonTypeRecord.name);
-          md.addEpisodeGroup(mediaEpisodeGroup);
-
-          // season names/plot
-          baseTranslation = null;
-          fallbackTranslation = null;
-          try {
-            Response<TranslationResponse> translationResponse = null;
-            if (fakeListToList(seasonBaseRecord.nameTranslations).contains(baseLanguage)
-                    || fakeListToList(seasonBaseRecord.overviewTranslations).contains(baseLanguage)) {
-              translationResponse = tvdb.getSeasonsService().getSeasonTranslation(seasonBaseRecord.id, baseLanguage).execute();
-              if (translationResponse.isSuccessful()) {
-                baseTranslation = translationResponse.body().data;
-              }
+        // season names/plot
+        baseTranslation = null;
+        fallbackTranslation = null;
+        try {
+          Response<TranslationResponse> translationResponse = null;
+          if (fakeListToList(seasonBaseRecord.nameTranslations).contains(baseLanguage)
+              || fakeListToList(seasonBaseRecord.overviewTranslations).contains(baseLanguage)) {
+            translationResponse = tvdb.getSeasonsService().getSeasonTranslation(seasonBaseRecord.id, baseLanguage).execute();
+            if (translationResponse.isSuccessful()) {
+              baseTranslation = translationResponse.body().data;
             }
-            // also get fallback is either title or overview of the base translation is missing
-            if ((baseTranslation == null || StringUtils.isAnyBlank(baseTranslation.name, baseTranslation.overview))
-                    && (fakeListToList(seasonBaseRecord.nameTranslations).contains(fallbackLanguage)
-                    || fakeListToList(seasonBaseRecord.overviewTranslations).contains(fallbackLanguage))) {
-              translationResponse = tvdb.getSeasonsService().getSeasonTranslation(seasonBaseRecord.id, fallbackLanguage).execute();
-              if (translationResponse.isSuccessful()) {
-                fallbackTranslation = translationResponse.body().data;
-              }
-            }
-            // season title
-            if (baseTranslation != null && StringUtils.isNotBlank(baseTranslation.name)) {
-              md.addSeasonName(mediaEpisodeGroup, seasonBaseRecord.number, baseTranslation.name);
-            } else if (fallbackTranslation != null && StringUtils.isNotBlank(fallbackTranslation.name)) {
-              md.addSeasonName(mediaEpisodeGroup, seasonBaseRecord.number, fallbackTranslation.name);
-            }
-            // season overview
-            if (baseTranslation != null && StringUtils.isNotBlank(baseTranslation.overview)) {
-              md.addSeasonOverview(mediaEpisodeGroup, seasonBaseRecord.number, baseTranslation.overview);
-            } else if (fallbackTranslation != null && StringUtils.isNotBlank(fallbackTranslation.overview)) {
-              md.addSeasonOverview(mediaEpisodeGroup, seasonBaseRecord.number, fallbackTranslation.overview);
-            }
-          } catch (IOException e) {
-            LOGGER.error("failed to get season meta data: {}", e.getMessage());
-            throw new ScrapeException(e);
           }
+          // also get fallback is either title or overview of the base translation is missing
+          if ((baseTranslation == null || StringUtils.isAnyBlank(baseTranslation.name, baseTranslation.overview))
+              && (fakeListToList(seasonBaseRecord.nameTranslations).contains(fallbackLanguage)
+                  || fakeListToList(seasonBaseRecord.overviewTranslations).contains(fallbackLanguage))) {
+            translationResponse = tvdb.getSeasonsService().getSeasonTranslation(seasonBaseRecord.id, fallbackLanguage).execute();
+            if (translationResponse.isSuccessful()) {
+              fallbackTranslation = translationResponse.body().data;
+            }
+          }
+          // season title
+          if (baseTranslation != null && StringUtils.isNotBlank(baseTranslation.name)) {
+            md.addSeasonName(mediaEpisodeGroup, seasonBaseRecord.number, baseTranslation.name);
+          }
+          else if (fallbackTranslation != null && StringUtils.isNotBlank(fallbackTranslation.name)) {
+            md.addSeasonName(mediaEpisodeGroup, seasonBaseRecord.number, fallbackTranslation.name);
+          }
+          // season overview
+          if (baseTranslation != null && StringUtils.isNotBlank(baseTranslation.overview)) {
+            md.addSeasonOverview(mediaEpisodeGroup, seasonBaseRecord.number, baseTranslation.overview);
+          }
+          else if (fallbackTranslation != null && StringUtils.isNotBlank(fallbackTranslation.overview)) {
+            md.addSeasonOverview(mediaEpisodeGroup, seasonBaseRecord.number, fallbackTranslation.overview);
+          }
+        }
+        catch (IOException e) {
+          LOGGER.error("failed to get season meta data: {}", e.getMessage());
+          throw new ScrapeException(e);
         }
       }
     }
