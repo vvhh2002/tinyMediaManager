@@ -347,7 +347,7 @@ public class TheTvDbTvShowMetadataProvider extends TheTvDbMetadataProvider
             // season title
             if (baseTranslation != null && StringUtils.isNotBlank(baseTranslation.name)) {
               md.addSeasonName(mediaEpisodeGroup, seasonBaseRecord.number, baseTranslation.name);
-            } else if (fallbackTranslation != null && StringUtils.isNotBlank(fallbackTranslation.overview)) {
+            } else if (fallbackTranslation != null && StringUtils.isNotBlank(fallbackTranslation.name)) {
               md.addSeasonName(mediaEpisodeGroup, seasonBaseRecord.number, fallbackTranslation.name);
             }
             // season overview
