@@ -511,7 +511,7 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
       injectTranslations(Locale.forLanguageTag(language), complete);
     }
     catch (Exception e) {
-      LOGGER.debug("failed to get meta data: {}", e.getMessage());
+      LOGGER.warn("failed to get meta data: {}", e.getMessage());
       throw new ScrapeException(e);
     }
 
@@ -629,10 +629,25 @@ public class TmdbTvShowMetadataProvider extends TmdbMetadataProvider implements 
     // aired date is default
     md.addEpisodeGroup(MediaEpisodeGroup.DEFAULT_AIRED);
 
+    // we only got the overview
     if (complete.episodeGroups != null) {
       for (TvEpisodeGroup episodeGroup : ListUtils.nullSafe(complete.episodeGroups.episodeGroups)) {
         if (episodeGroup.episodeCount == 0) {
           continue;
+        }
+
+        // now get details for every EG
+        try {
+          Response<TvEpisodeGroup> httpResponse = api.tvEpisodeGroupsService().episodeGroup(episodeGroup.id, language).execute();
+          if (!httpResponse.isSuccessful()) {
+            throw new HttpException(httpResponse.code(), httpResponse.message());
+          }
+          TvEpisodeGroup fullEG = httpResponse.body();
+          episodeGroup.groups = fullEG.groups; // copy to ours, so the rest of our code works 1:1
+        }
+        catch (Exception e) {
+          LOGGER.warn("failed to get episode group details: {}", e.getMessage());
+          // throw new ScrapeException(e); // continue
         }
 
         MediaEpisodeGroup.EpisodeGroupType eg = mapEpisodeGroup(episodeGroup.type);
