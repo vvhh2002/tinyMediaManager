@@ -380,10 +380,8 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
     firePropertyChange(NODE_REMOVED, null, cachedNode);
 
     // okay, we've removed the episode; now check which seasons we have to remove too
-    for (TvShowSeason season : episode.getTvShow().getSeasons()) {
-      if (season.getEpisodesForDisplay().isEmpty()) {
-        removeTvShowSeason(season);
-      }
+    if (episode.getTvShowSeason().getEpisodesForDisplay().isEmpty()) {
+      removeTvShowSeason(episode.getTvShowSeason());
     }
   }
 
