@@ -168,6 +168,24 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
     return tvShowDbId;
   }
 
+  public void removeAllEpisodes() {
+    List<TvShowEpisode> removedEpisodes = new ArrayList<>(episodes);
+    removedEpisodes.addAll(dummyEpisodes);
+
+    episodes.clear();
+    dummyEpisodes.clear();
+
+    for (TvShowEpisode episode : removedEpisodes) {
+      episode.removePropertyChangeListener(listener);
+      firePropertyChange(REMOVED_EPISODE, null, episode);
+      firePropertyChange(FIRST_AIRED, null, getFirstAired());
+    }
+  }
+
+  boolean isEmpty() {
+    return episodes.isEmpty() && dummyEpisodes.isEmpty();
+  }
+
   public synchronized void addEpisode(TvShowEpisode episode) {
     // do not add twice
     if (episode == null) {
@@ -188,7 +206,7 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
     }
 
     episode.addPropertyChangeListener(listener);
-    firePropertyChange(ADDED_EPISODE, null, episodes);
+    firePropertyChange(ADDED_EPISODE, null, episode);
     firePropertyChange(FIRST_AIRED, null, getFirstAired());
   }
 

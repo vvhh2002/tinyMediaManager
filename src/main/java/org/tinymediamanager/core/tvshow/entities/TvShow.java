@@ -30,6 +30,7 @@ import static org.tinymediamanager.core.Constants.IMDB;
 import static org.tinymediamanager.core.Constants.MEDIA_FILES;
 import static org.tinymediamanager.core.Constants.MEDIA_INFORMATION;
 import static org.tinymediamanager.core.Constants.REMOVED_EPISODE;
+import static org.tinymediamanager.core.Constants.REMOVED_SEASON;
 import static org.tinymediamanager.core.Constants.RUNTIME;
 import static org.tinymediamanager.core.Constants.SEASON;
 import static org.tinymediamanager.core.Constants.SEASON_COUNT;
@@ -444,13 +445,21 @@ public class TvShow extends MediaEntity implements IMediaInformation {
 
     // also rebuild the seasons and fire the event for all episodes too
     if (!oldValue.equals(newValue)) {
-      for (TvShowEpisode episode : getEpisodesForDisplay()) {
-        // remove from old season
-        getOrCreateSeason(episode.getSeason(oldValue)).removeEpisode(episode);
+      // remove all episodes from all seasons
+      seasons.forEach(TvShowSeason::removeAllEpisodes);
 
+      // and rebuild
+      for (TvShowEpisode episode : getEpisodesForDisplay()) {
         // add to new season
         getOrCreateSeason(episode.getSeason()).addEpisode(episode);
         episode.firePropertyChange(Constants.EPISODE_GROUP, oldValue, newValue);
+      }
+
+      // remove empty seasons
+      for (TvShowSeason season : new ArrayList<>(seasons)) {
+        if (season.isEmpty()) {
+          removeSeason(season);
+        }
       }
 
       // update the season names/overviews
@@ -458,7 +467,6 @@ public class TvShow extends MediaEntity implements IMediaInformation {
         season.setTitle(getSeasonName(season.getSeason()));
         season.setPlot(getSeasonOverview(season.getSeason()));
       }
-
     }
   }
 
@@ -904,6 +912,15 @@ public class TvShow extends MediaEntity implements IMediaInformation {
       seasons.add(season);
 
       firePropertyChange(ADDED_SEASON, null, season);
+      firePropertyChange(SEASON_COUNT, seasonCount, seasons.size());
+    }
+  }
+
+  void removeSeason(TvShowSeason season) {
+    int seasonCount = seasons.size();
+
+    if (seasons.remove(season)) {
+      firePropertyChange(REMOVED_SEASON, null, season);
       firePropertyChange(SEASON_COUNT, seasonCount, seasons.size());
     }
   }

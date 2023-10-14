@@ -97,6 +97,11 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
           addTvShowSeason(season);
           break;
 
+        case Constants.REMOVED_SEASON:
+          season = (TvShowSeason) evt.getNewValue();
+          removeTvShowSeason(season);
+          break;
+
         case Constants.ADDED_EPISODE:
           episode = (TvShowEpisode) evt.getNewValue();
           addTvShowEpisode(episode);
@@ -121,6 +126,14 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
       TvShowSeason season = (TvShowSeason) evt.getSource();
 
       switch (evt.getPropertyName()) {
+        case Constants.ADDED_EPISODE:
+          addTvShowEpisode((TvShowEpisode) evt.getNewValue());
+          break;
+
+        case Constants.REMOVED_EPISODE:
+          removeTvShowEpisode((TvShowEpisode) evt.getNewValue());
+          break;
+
         default:
           nodeChanged(season);
           break;
