@@ -67,7 +67,7 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
   private final int                 season;
 
   private TvShow                    tvShow        = null;
-  private final List<TvShowEpisode> episodes = new CopyOnWriteArrayList<>();
+  private final List<TvShowEpisode> episodes      = new CopyOnWriteArrayList<>();
   private final List<TvShowEpisode> dummyEpisodes = new CopyOnWriteArrayList<>();
 
   private PropertyChangeListener    listener;
@@ -213,7 +213,7 @@ public class TvShowSeason extends MediaEntity implements Comparable<TvShowSeason
   public void removeEpisode(TvShowEpisode episode) {
     episodes.remove(episode);
     episode.removePropertyChangeListener(listener);
-    firePropertyChange(REMOVED_EPISODE, null, episodes);
+    firePropertyChange(REMOVED_EPISODE, null, episode);
     firePropertyChange(FIRST_AIRED, null, getFirstAired());
   }
 
