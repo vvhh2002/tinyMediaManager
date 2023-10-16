@@ -451,7 +451,13 @@ public class TvShow extends MediaEntity implements IMediaInformation {
       // and rebuild
       for (TvShowEpisode episode : getEpisodesForDisplay()) {
         // add to new season
-        getOrCreateSeason(episode.getSeason()).addEpisode(episode);
+        TvShowSeason season = getOrCreateSeason(episode.getSeason());
+
+        // make sure the season is in the UI
+        firePropertyChange(ADDED_SEASON, null, season);
+
+        // add the episode to it
+        season.addEpisode(episode);
         episode.firePropertyChange(Constants.EPISODE_GROUP, oldValue, newValue);
       }
 

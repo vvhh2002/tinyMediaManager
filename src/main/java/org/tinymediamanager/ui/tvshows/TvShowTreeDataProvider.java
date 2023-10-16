@@ -344,10 +344,6 @@ public class TvShowTreeDataProvider extends TmmTreeDataProvider<TmmTreeNode> {
   }
 
   private TmmTreeNode addTvShowSeason(TvShowSeason season) {
-    if (season.getEpisodesForDisplay().isEmpty()) {
-      return null;
-    }
-
     // check if this season has already been added
     TmmTreeNode cachedNode = getNodeFromCache(season);
     if (cachedNode != null) {
