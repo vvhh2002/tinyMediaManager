@@ -119,43 +119,52 @@ import com.fasterxml.jackson.annotation.JsonSetter;
  * @author Manuel Laggner
  */
 public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpisode>, IMediaInformation {
-  private static final Logger LOGGER = LoggerFactory.getLogger(TvShowEpisode.class);
+  private static final Logger                LOGGER                = LoggerFactory.getLogger(TvShowEpisode.class);
   private static final Comparator<MediaFile> MEDIA_FILE_COMPARATOR = new TvShowMediaFileComparator();
 
   @JsonProperty
-  private final List<MediaEpisodeNumber> episodeNumbers = new CopyOnWriteArrayList<>();
+  private final List<MediaEpisodeNumber>     episodeNumbers        = new CopyOnWriteArrayList<>();
   @JsonProperty
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  private Date firstAired = null;
+  private Date                               firstAired            = null;
   @JsonProperty
-  private boolean disc = false;
+  private boolean                            disc                  = false;
   @JsonProperty
-  private boolean multiEpisode = false;
+  private boolean                            multiEpisode          = false;
   @JsonProperty
-  private boolean watched = false;
+  private boolean                            watched               = false;
   @JsonProperty
-  private int playcount = 0;
+  private int                                playcount             = 0;
   @JsonProperty
-  private UUID tvShowId = null;
+  private UUID                               tvShowId              = null;
   @JsonProperty
-  private MediaSource mediaSource = MediaSource.UNKNOWN;                         // DVD,
+  private MediaSource                        mediaSource           = MediaSource.UNKNOWN;                         // DVD,
   // Bluray,
   // etc
   @JsonProperty
-  private boolean stacked = false;
+  private boolean                            stacked               = false;
 
   @JsonProperty
-  private final List<Person> actors = new CopyOnWriteArrayList<>();
+  private final List<Person>                 actors                = new CopyOnWriteArrayList<>();
   @JsonProperty
-  private final List<Person> directors = new CopyOnWriteArrayList<>();
+  private final List<Person>                 directors             = new CopyOnWriteArrayList<>();
   @JsonProperty
-  private final List<Person> writers = new CopyOnWriteArrayList<>();
+  private final List<Person>                 writers               = new CopyOnWriteArrayList<>();
 
-  private TvShow tvShow = null;
-  private String titleSortable = "";
-  private String otherIds = "";
-  private Date lastWatched = null;
-  private boolean dummy = false;
+  private TvShow                             tvShow                = null;
+  private String                             titleSortable         = "";
+  private String                             otherIds              = "";
+  private Date                               lastWatched           = null;
+  private boolean                            dummy                 = false;
+
+  // LEGACY
+  @JsonIgnore
+  public Map<String, Object>                 additionalProperties  = new HashMap<>();
+
+  @JsonAnySetter
+  public void setAdditionalProperty(String name, Object value) {
+    this.additionalProperties.put(name, value);
+  }
 
   /**
    * Instantiates a new tv show episode. To initialize the propertychangesupport after loading
@@ -542,16 +551,16 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
    */
   public MediaEpisodeNumber getEpisodeNumber(@NotNull MediaEpisodeGroup episodeGroup) {
     MediaEpisodeNumber episodeNumber = episodeNumbers.stream()
-            .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().equals(episodeGroup))
-            .findFirst()
-            .orElse(null);
+        .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().equals(episodeGroup))
+        .findFirst()
+        .orElse(null);
 
     // legacy fallback
     if (episodeNumber == null && episodeGroup.getEpisodeGroupType() == AIRED) {
       episodeNumber = episodeNumbers.stream()
-              .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().getEpisodeGroupType() == AIRED)
-              .findFirst()
-              .orElse(null);
+          .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().getEpisodeGroupType() == AIRED)
+          .findFirst()
+          .orElse(null);
     }
 
     return episodeNumber;
@@ -564,9 +573,9 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
    */
   private MediaEpisodeNumber getEpisodeNumber(@NotNull MediaEpisodeGroup.EpisodeGroupType episodeGroupType) {
     return episodeNumbers.stream()
-            .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().getEpisodeGroupType() == episodeGroupType)
-            .findFirst()
-            .orElse(null);
+        .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().getEpisodeGroupType() == episodeGroupType)
+        .findFirst()
+        .orElse(null);
   }
 
   /**
@@ -622,8 +631,8 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
   public void setEpisode(@NotNull MediaEpisodeNumber episode) {
     if (!episode.containsAnyNumber()) {
       List<MediaEpisodeNumber> toRemove = episodeNumbers.stream()
-              .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().equals(episode.episodeGroup()))
-              .toList();
+          .filter(mediaEpisodeNumber -> mediaEpisodeNumber.episodeGroup().equals(episode.episodeGroup()))
+          .toList();
       if (!toRemove.isEmpty()) {
         episodeNumbers.removeAll(toRemove);
         firePropertyChange(EPISODE, 0, -1);
@@ -2001,86 +2010,6 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
           writeActorImages(overwriteExistingItems);
         }
       });
-    }
-  }
-
-  /**
-   * used to migrate values to their new location
-   *
-   * @param property
-   *          the property/value name
-   * @param value
-   *          the value itself
-   */
-  @JsonAnySetter
-  public void setUnknownFields(String property, Object value) {
-    if (value == null) {
-      return;
-    }
-
-    // integer values
-    if (value instanceof Integer integer && integer > -1) {
-      switch (property) {
-        case "episode" -> {
-          MediaEpisodeNumber foundEpisodeNumber = getEpisodeNumber(MediaEpisodeGroup.EpisodeGroupType.AIRED);
-          if (foundEpisodeNumber != null) {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, foundEpisodeNumber.season(), integer));
-          }
-          else {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, -1, integer));
-          }
-        }
-
-        case "season" -> {
-          MediaEpisodeNumber foundEpisodeNumber = getEpisodeNumber(MediaEpisodeGroup.EpisodeGroupType.AIRED);
-          if (foundEpisodeNumber != null) {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, integer, foundEpisodeNumber.episode()));
-          }
-          else {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, integer, -1));
-          }
-        }
-
-        case "dvdEpisode" -> {
-          MediaEpisodeNumber foundEpisodeNumber = getEpisodeNumber(MediaEpisodeGroup.EpisodeGroupType.DVD);
-          if (foundEpisodeNumber != null) {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, foundEpisodeNumber.season(), integer));
-          }
-          else {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, -1, integer));
-          }
-        }
-
-        case "dvdSeason" -> {
-          MediaEpisodeNumber foundEpisodeNumber = getEpisodeNumber(MediaEpisodeGroup.EpisodeGroupType.DVD);
-          if (foundEpisodeNumber != null) {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, integer, foundEpisodeNumber.episode()));
-          }
-          else {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, integer, -1));
-          }
-        }
-
-        case "displayEpisode" -> {
-          MediaEpisodeNumber foundEpisodeNumber = getEpisodeNumber(MediaEpisodeGroup.EpisodeGroupType.DISPLAY);
-          if (foundEpisodeNumber != null) {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, foundEpisodeNumber.season(), integer));
-          }
-          else {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, -1, integer));
-          }
-        }
-
-        case "displaySeason" -> {
-          MediaEpisodeNumber foundEpisodeNumber = getEpisodeNumber(MediaEpisodeGroup.EpisodeGroupType.DISPLAY);
-          if (foundEpisodeNumber != null) {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, integer, foundEpisodeNumber.episode()));
-          }
-          else {
-            setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, integer, -1));
-          }
-        }
-      }
     }
   }
 }

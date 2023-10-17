@@ -72,6 +72,8 @@ import org.tinymediamanager.scraper.MediaScraper;
 import org.tinymediamanager.scraper.MediaSearchResult;
 import org.tinymediamanager.scraper.ScraperType;
 import org.tinymediamanager.scraper.entities.MediaCertification;
+import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
+import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 import org.tinymediamanager.scraper.entities.MediaLanguages;
 import org.tinymediamanager.scraper.exceptions.ScrapeException;
 import org.tinymediamanager.scraper.interfaces.ITvShowMetadataProvider;
@@ -364,7 +366,7 @@ public final class TvShowList extends AbstractModelObject {
     }
 
     if (!imagesToCache.isEmpty()) {
-        imagesToCache.forEach(ImageCache::cacheImageAsync);
+      imagesToCache.forEach(ImageCache::cacheImageAsync);
     }
   }
 
@@ -659,6 +661,25 @@ public final class TvShowList extends AbstractModelObject {
           LOGGER.info("episode \"S{}E{}\" without video file - dropping", episode.getSeason(), episode.getEpisode());
           toRemove.add(uuid);
           return;
+        }
+
+        // create season and EGs, if we read it in "old" style
+        if (!episode.additionalProperties.isEmpty() && episode.getEpisodeNumbers().isEmpty()) {
+          int s = (int) episode.additionalProperties.get("season");
+          int e = (int) episode.additionalProperties.get("episode");
+          episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, s, e)); // always, also on -1/-1
+
+          s = (int) episode.additionalProperties.get("dvdSeason");
+          e = (int) episode.additionalProperties.get("dvdEpisode");
+          if (s > -1 && e > -1) {
+            episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, s, e));
+          }
+
+          s = (int) episode.additionalProperties.get("displaySeason");
+          e = (int) episode.additionalProperties.get("displayEpisode");
+          if (s > -1 && e > -1) {
+            episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, s, e));
+          }
         }
 
         // assign it to the right TV show
