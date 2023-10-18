@@ -41,13 +41,13 @@ public class MediaEpisodeGroup implements Comparable<MediaEpisodeGroup> {
     DISPLAY
   }
 
-  public static final MediaEpisodeGroup DEFAULT_AIRED = new MediaEpisodeGroup(EpisodeGroupType.AIRED);
-  public static final MediaEpisodeGroup DEFAULT_DVD = new MediaEpisodeGroup(EpisodeGroupType.DVD);
+  public static final MediaEpisodeGroup DEFAULT_AIRED    = new MediaEpisodeGroup(EpisodeGroupType.AIRED);
+  public static final MediaEpisodeGroup DEFAULT_DVD      = new MediaEpisodeGroup(EpisodeGroupType.DVD);
   public static final MediaEpisodeGroup DEFAULT_ABSOLUTE = new MediaEpisodeGroup(EpisodeGroupType.ABSOLUTE);
-  public static final MediaEpisodeGroup DEFAULT_DISPLAY = new MediaEpisodeGroup(EpisodeGroupType.DISPLAY);
+  public static final MediaEpisodeGroup DEFAULT_DISPLAY  = new MediaEpisodeGroup(EpisodeGroupType.DISPLAY);
 
   @JsonProperty
-  private final EpisodeGroupType episodeGroupType;
+  private final EpisodeGroupType        episodeGroupType;
   @JsonProperty
   private final String                  name;
 
@@ -75,6 +75,9 @@ public class MediaEpisodeGroup implements Comparable<MediaEpisodeGroup> {
 
   @Override
   public String toString() {
+    if (episodeGroupType == null) {
+      return TmmResourceBundle.getString("episodeGroup.aired"); // former v5
+    }
     String localizedEnumName = TmmResourceBundle.getString("episodeGroup." + episodeGroupType.name().toLowerCase(Locale.ROOT));
     if (StringUtils.isNotBlank(name)) {
       return name + " (" + localizedEnumName + ")";

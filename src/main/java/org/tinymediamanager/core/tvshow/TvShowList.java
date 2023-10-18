@@ -712,6 +712,18 @@ public final class TvShowList extends AbstractModelObject {
     LOGGER.info("found {} episodes in database", episodesToCount.size());
     LOGGER.debug("took {} ms", (end - start) / 1000000);
 
+    // remove shows with empty episodes
+    toRemove.clear();
+    for (TvShow tvShow : tvShowsFromDb) {
+      if (tvShow.getEpisodeCount() == 0) {
+        toRemove.add(tvShow.getDbId());
+      }
+    }
+    for (UUID uuid : toRemove) {
+      TvShow tvShow = tvShowUuidMap.get(uuid);
+      tvShowsFromDb.remove(tvShow);
+    }
+
     // and add all TV shows to the UI
     tvShows.addAll(tvShowsFromDb);
   }
