@@ -73,12 +73,14 @@ import org.tinymediamanager.scraper.MediaSearchResult;
 import org.tinymediamanager.scraper.ScraperType;
 import org.tinymediamanager.scraper.entities.MediaCertification;
 import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
+import org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType;
 import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 import org.tinymediamanager.scraper.entities.MediaLanguages;
 import org.tinymediamanager.scraper.exceptions.ScrapeException;
 import org.tinymediamanager.scraper.interfaces.ITvShowMetadataProvider;
 import org.tinymediamanager.scraper.util.ListUtils;
 import org.tinymediamanager.scraper.util.MediaIdUtil;
+import org.tinymediamanager.scraper.util.MetadataUtil;
 
 import com.fasterxml.jackson.databind.ObjectReader;
 
@@ -558,6 +560,10 @@ public final class TvShowList extends AbstractModelObject {
         json = tvShowMap.get(uuid);
         TvShow tvShow = tvShowObjectReader.readValue(json);
         tvShow.setDbId(uuid);
+        if (tvShow.getEpisodeGroup() == null || (tvShow.getEpisodeGroup() != null && tvShow.getEpisodeGroup().getEpisodeGroupType() == null)) {
+          // old v5 - cannot read
+          tvShow.setEpisodeGroup(MediaEpisodeGroup.DEFAULT_AIRED);
+        }
 
         // for performance reasons we add tv shows after loading the episodes
         if (!tvShowsFromDb.add(tvShow)) {
@@ -629,7 +635,7 @@ public final class TvShowList extends AbstractModelObject {
 
     end = System.nanoTime();
 
-    // remove orphaned episodes
+    // remove orphaned seasons
     for (UUID uuid : toRemove) {
       seasonMap.remove(uuid);
     }
@@ -665,21 +671,43 @@ public final class TvShowList extends AbstractModelObject {
 
         // create season and EGs, if we read it in "old" style
         if (!episode.additionalProperties.isEmpty() && episode.getEpisodeNumbers().isEmpty()) {
-          int s = (int) episode.additionalProperties.get("season");
-          int e = (int) episode.additionalProperties.get("episode");
-          episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, s, e)); // always, also on -1/-1
+          // V4 style
+          int s = MetadataUtil.parseInt(episode.additionalProperties.get("season"), -2);
+          int e = MetadataUtil.parseInt(episode.additionalProperties.get("episode"), -2);
+          if (s > -2 && e > -2) {
+            // also record -1/-1 episodes
+            episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, s, e));
+          }
 
-          s = (int) episode.additionalProperties.get("dvdSeason");
-          e = (int) episode.additionalProperties.get("dvdEpisode");
+          s = MetadataUtil.parseInt(episode.additionalProperties.get("dvdSeason"), -1);
+          e = MetadataUtil.parseInt(episode.additionalProperties.get("dvdEpisode"), -1);
           if (s > -1 && e > -1) {
             episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, s, e));
           }
 
-          s = (int) episode.additionalProperties.get("displaySeason");
-          e = (int) episode.additionalProperties.get("displayEpisode");
+          s = MetadataUtil.parseInt(episode.additionalProperties.get("displaySeason"), -1);
+          e = MetadataUtil.parseInt(episode.additionalProperties.get("displayEpisode"), -1);
           if (s > -1 && e > -1) {
             episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, s, e));
           }
+
+          // former V5 style
+          Object old = episode.additionalProperties.get("episodeNumbers");
+          if (old != null) {
+            Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>> oldNumbers = (Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>>) old;
+            oldNumbers.forEach((k, v) -> {
+              int se = MetadataUtil.parseInt(v.get("season"), -1);
+              int ep = MetadataUtil.parseInt(v.get("episode"), -1);
+              EpisodeGroupType type = EpisodeGroupType.valueOf(k.toString());
+              if (type != null) {
+                MediaEpisodeGroup meg = new MediaEpisodeGroup(type);
+                episode.setEpisode(new MediaEpisodeNumber(meg, se, ep));
+              }
+
+            });
+          }
+
+          episode.saveToDb();
         }
 
         // assign it to the right TV show
@@ -687,7 +715,6 @@ public final class TvShowList extends AbstractModelObject {
         if (tvShow != null) {
           episode.setTvShow(tvShow);
           tvShow.addEpisode(episode);
-
           episodesToCount.add(episode);
         }
         else {

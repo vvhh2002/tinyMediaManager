@@ -122,7 +122,9 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
   private static final Logger                LOGGER                = LoggerFactory.getLogger(TvShowEpisode.class);
   private static final Comparator<MediaFile> MEDIA_FILE_COMPARATOR = new TvShowMediaFileComparator();
 
-  @JsonProperty
+  // we save our EG object as "number 2" in JSON...
+  // since we want get the former "number 1" object into our additionalProperties object for migration
+  @JsonProperty("episodeNumbers2")
   private final List<MediaEpisodeNumber>     episodeNumbers        = new CopyOnWriteArrayList<>();
   @JsonProperty
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -138,9 +140,7 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
   @JsonProperty
   private UUID                               tvShowId              = null;
   @JsonProperty
-  private MediaSource                        mediaSource           = MediaSource.UNKNOWN;                         // DVD,
-  // Bluray,
-  // etc
+  private MediaSource                        mediaSource           = MediaSource.UNKNOWN;
   @JsonProperty
   private boolean                            stacked               = false;
 
