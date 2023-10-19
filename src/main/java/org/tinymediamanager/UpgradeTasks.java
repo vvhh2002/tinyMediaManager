@@ -56,6 +56,10 @@ import org.tinymediamanager.core.tvshow.entities.TvShowEpisode;
 import org.tinymediamanager.core.tvshow.entities.TvShowSeason;
 import org.tinymediamanager.core.tvshow.filenaming.TvShowExtraFanartNaming;
 import org.tinymediamanager.scraper.MediaMetadata;
+import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
+import org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType;
+import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
+import org.tinymediamanager.scraper.util.MetadataUtil;
 import org.tinymediamanager.scraper.util.StrgUtils;
 import org.tinymediamanager.ui.TmmUILayoutStore;
 
@@ -401,7 +405,7 @@ public class UpgradeTasks {
 
         // migrate season artwork to the seasons
         List<MediaFile> seasonMediaFiles = tvShow.getMediaFiles(MediaFileType.SEASON_POSTER, MediaFileType.SEASON_BANNER, MediaFileType.SEASON_THUMB,
-                MediaFileType.SEASON_FANART);
+            MediaFileType.SEASON_FANART);
         for (MediaFile mf : seasonMediaFiles) {
           if (mf.getFilesize() != 0) {
             String foldername = tvShow.getPathNIO().relativize(mf.getFileAsPath().getParent()).toString();
@@ -427,9 +431,68 @@ public class UpgradeTasks {
 
         tvShow.saveToDb();
       }
-
       module.setDbVersion(5001);
     }
+
+    // migrating EpisodeGroups from V4 / nightly V5
+    if (module.getDbVersion() < 5002) {
+      LOGGER.info("performing upgrade to ver: {}", 5002);
+      for (TvShow tvShow : tvShowList.getTvShows()) {
+        if (tvShow.getEpisodeGroup() == null || (tvShow.getEpisodeGroup() != null && tvShow.getEpisodeGroup().getEpisodeGroupType() == null)) {
+          // v4 empty / old v5 - cannot read
+          tvShow.setEpisodeGroup(MediaEpisodeGroup.DEFAULT_AIRED);
+        }
+
+        for (TvShowEpisode episode : tvShow.getEpisodes()) {
+          // create season and EGs, if we read it in "old" style
+          if (!episode.additionalProperties.isEmpty() && episode.getEpisodeNumbers().isEmpty()) {
+            // V4 style
+            int s = MetadataUtil.parseInt(episode.additionalProperties.get("season"), -2);
+            int e = MetadataUtil.parseInt(episode.additionalProperties.get("episode"), -2);
+            if (s > -2 && e > -2) {
+              // also record -1/-1 episodes
+              episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, s, e));
+            }
+
+            s = MetadataUtil.parseInt(episode.additionalProperties.get("dvdSeason"), -1);
+            e = MetadataUtil.parseInt(episode.additionalProperties.get("dvdEpisode"), -1);
+            if (s > -1 && e > -1) {
+              episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, s, e));
+            }
+
+            s = MetadataUtil.parseInt(episode.additionalProperties.get("displaySeason"), -1);
+            e = MetadataUtil.parseInt(episode.additionalProperties.get("displayEpisode"), -1);
+            if (s > -1 && e > -1) {
+              episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, s, e));
+            }
+
+            // former V5 style
+            Object old = episode.additionalProperties.get("episodeNumbers");
+            if (old != null) {
+              Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>> oldNumbers = (Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>>) old;
+              oldNumbers.forEach((k, v) -> {
+                int se = MetadataUtil.parseInt(v.get("season"), -1);
+                int ep = MetadataUtil.parseInt(v.get("episode"), -1);
+                EpisodeGroupType type = EpisodeGroupType.valueOf(k.toString());
+                if (type != null) {
+                  MediaEpisodeGroup meg = new MediaEpisodeGroup(type);
+                  episode.setEpisode(new MediaEpisodeNumber(meg, se, ep));
+                }
+              });
+            }
+            episode.saveToDb();
+          }
+        }
+        tvShow.saveToDb();
+      } // end foreach show
+      module.setDbVersion(5002);
+    }
+
+    // if (module.getDbVersion() < 50xx) {
+    // LOGGER.info("performing upgrade to ver: {}", 50xx);
+    //
+    // module.setDbVersion(50xx);
+    // }
   }
 
   /**

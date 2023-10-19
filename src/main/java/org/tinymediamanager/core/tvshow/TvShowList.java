@@ -72,15 +72,11 @@ import org.tinymediamanager.scraper.MediaScraper;
 import org.tinymediamanager.scraper.MediaSearchResult;
 import org.tinymediamanager.scraper.ScraperType;
 import org.tinymediamanager.scraper.entities.MediaCertification;
-import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
-import org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType;
-import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 import org.tinymediamanager.scraper.entities.MediaLanguages;
 import org.tinymediamanager.scraper.exceptions.ScrapeException;
 import org.tinymediamanager.scraper.interfaces.ITvShowMetadataProvider;
 import org.tinymediamanager.scraper.util.ListUtils;
 import org.tinymediamanager.scraper.util.MediaIdUtil;
-import org.tinymediamanager.scraper.util.MetadataUtil;
 
 import com.fasterxml.jackson.databind.ObjectReader;
 
@@ -551,20 +547,13 @@ public final class TvShowList extends AbstractModelObject {
     ObjectReader tvShowObjectReader = TvShowModuleManager.getInstance().getTvShowObjectReader();
 
     List<UUID> toRemove = new ArrayList<>();
-
     long start = System.nanoTime();
-
     new ArrayList<>(tvShowMap.keyList()).forEach(uuid -> {
       String json = "";
       try {
         json = tvShowMap.get(uuid);
         TvShow tvShow = tvShowObjectReader.readValue(json);
         tvShow.setDbId(uuid);
-        if (tvShow.getEpisodeGroup() == null || (tvShow.getEpisodeGroup() != null && tvShow.getEpisodeGroup().getEpisodeGroupType() == null)) {
-          // old v5 - cannot read
-          tvShow.setEpisodeGroup(MediaEpisodeGroup.DEFAULT_AIRED);
-        }
-
         // for performance reasons we add tv shows after loading the episodes
         if (!tvShowsFromDb.add(tvShow)) {
           // already in there?! remove dupe
@@ -578,14 +567,11 @@ public final class TvShowList extends AbstractModelObject {
         toRemove.add(uuid);
       }
     });
-
     long end = System.nanoTime();
-
     // remove orphaned defect TV shows
     for (UUID uuid : toRemove) {
       tvShowMap.remove(uuid);
     }
-
     LOGGER.info("found {} TV shows in database", tvShowsFromDb.size());
     LOGGER.debug("took {} ms", (end - start) / 1000000);
 
@@ -603,9 +589,7 @@ public final class TvShowList extends AbstractModelObject {
 
     // just to get the episode count
     List<TvShowSeason> seasonsToCount = new ArrayList<>();
-
     start = System.nanoTime();
-
     new ArrayList<>(seasonMap.keyList()).forEach(uuid -> {
       String json = "";
       try {
@@ -618,7 +602,6 @@ public final class TvShowList extends AbstractModelObject {
         if (tvShow != null) {
           season.setTvShow(tvShow);
           tvShow.addSeason(season);
-
           seasonsToCount.add(season);
         }
         else {
@@ -632,14 +615,11 @@ public final class TvShowList extends AbstractModelObject {
         toRemove.add(uuid);
       }
     });
-
     end = System.nanoTime();
-
     // remove orphaned seasons
     for (UUID uuid : toRemove) {
       seasonMap.remove(uuid);
     }
-
     LOGGER.info("found {} seasons in database", seasonsToCount.size());
     LOGGER.debug("took {} ms", (end - start) / 1000000);
 
@@ -651,9 +631,7 @@ public final class TvShowList extends AbstractModelObject {
 
     // just to get the episode count
     List<TvShowEpisode> episodesToCount = new ArrayList<>();
-
     start = System.nanoTime();
-
     new ArrayList<>(episodesMap.keyList()).forEach(uuid -> {
       String json = "";
       try {
@@ -667,47 +645,6 @@ public final class TvShowList extends AbstractModelObject {
           LOGGER.info("episode \"S{}E{}\" without video file - dropping", episode.getSeason(), episode.getEpisode());
           toRemove.add(uuid);
           return;
-        }
-
-        // create season and EGs, if we read it in "old" style
-        if (!episode.additionalProperties.isEmpty() && episode.getEpisodeNumbers().isEmpty()) {
-          // V4 style
-          int s = MetadataUtil.parseInt(episode.additionalProperties.get("season"), -2);
-          int e = MetadataUtil.parseInt(episode.additionalProperties.get("episode"), -2);
-          if (s > -2 && e > -2) {
-            // also record -1/-1 episodes
-            episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_AIRED, s, e));
-          }
-
-          s = MetadataUtil.parseInt(episode.additionalProperties.get("dvdSeason"), -1);
-          e = MetadataUtil.parseInt(episode.additionalProperties.get("dvdEpisode"), -1);
-          if (s > -1 && e > -1) {
-            episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DVD, s, e));
-          }
-
-          s = MetadataUtil.parseInt(episode.additionalProperties.get("displaySeason"), -1);
-          e = MetadataUtil.parseInt(episode.additionalProperties.get("displayEpisode"), -1);
-          if (s > -1 && e > -1) {
-            episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, s, e));
-          }
-
-          // former V5 style
-          Object old = episode.additionalProperties.get("episodeNumbers");
-          if (old != null) {
-            Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>> oldNumbers = (Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>>) old;
-            oldNumbers.forEach((k, v) -> {
-              int se = MetadataUtil.parseInt(v.get("season"), -1);
-              int ep = MetadataUtil.parseInt(v.get("episode"), -1);
-              EpisodeGroupType type = EpisodeGroupType.valueOf(k.toString());
-              if (type != null) {
-                MediaEpisodeGroup meg = new MediaEpisodeGroup(type);
-                episode.setEpisode(new MediaEpisodeNumber(meg, se, ep));
-              }
-
-            });
-          }
-
-          episode.saveToDb();
         }
 
         // assign it to the right TV show
@@ -728,18 +665,17 @@ public final class TvShowList extends AbstractModelObject {
         toRemove.add(uuid);
       }
     });
-
     end = System.nanoTime();
-
     // remove orphaned episodes
     for (UUID uuid : toRemove) {
       episodesMap.remove(uuid);
     }
-
     LOGGER.info("found {} episodes in database", episodesToCount.size());
     LOGGER.debug("took {} ms", (end - start) / 1000000);
 
-    // remove shows with empty episodes
+    //////////////////////////////////////////////////
+    // cleanup: remove shows with empty episodes
+    //////////////////////////////////////////////////
     toRemove.clear();
     for (TvShow tvShow : tvShowsFromDb) {
       if (tvShow.getEpisodeCount() == 0) {
