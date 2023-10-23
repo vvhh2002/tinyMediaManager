@@ -57,7 +57,6 @@ import org.tinymediamanager.core.tvshow.entities.TvShowSeason;
 import org.tinymediamanager.core.tvshow.filenaming.TvShowExtraFanartNaming;
 import org.tinymediamanager.scraper.MediaMetadata;
 import org.tinymediamanager.scraper.entities.MediaEpisodeGroup;
-import org.tinymediamanager.scraper.entities.MediaEpisodeGroup.EpisodeGroupType;
 import org.tinymediamanager.scraper.entities.MediaEpisodeNumber;
 import org.tinymediamanager.scraper.util.MetadataUtil;
 import org.tinymediamanager.scraper.util.StrgUtils;
@@ -466,20 +465,6 @@ public class UpgradeTasks {
               episode.setEpisode(new MediaEpisodeNumber(MediaEpisodeGroup.DEFAULT_DISPLAY, s, e));
             }
 
-            // former V5 style
-            Object old = episode.additionalProperties.get("episodeNumbers");
-            if (old != null) {
-              Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>> oldNumbers = (Map<String, Map<EpisodeGroupType, MediaEpisodeNumber>>) old;
-              oldNumbers.forEach((k, v) -> {
-                int se = MetadataUtil.parseInt(v.get("season"), -1);
-                int ep = MetadataUtil.parseInt(v.get("episode"), -1);
-                EpisodeGroupType type = EpisodeGroupType.valueOf(k.toString());
-                if (type != null) {
-                  MediaEpisodeGroup meg = new MediaEpisodeGroup(type);
-                  episode.setEpisode(new MediaEpisodeNumber(meg, se, ep));
-                }
-              });
-            }
             episode.saveToDb();
           }
         }

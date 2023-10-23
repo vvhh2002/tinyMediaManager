@@ -122,9 +122,7 @@ public class TvShowEpisode extends MediaEntity implements Comparable<TvShowEpiso
   private static final Logger                LOGGER                = LoggerFactory.getLogger(TvShowEpisode.class);
   private static final Comparator<MediaFile> MEDIA_FILE_COMPARATOR = new TvShowMediaFileComparator();
 
-  // we save our EG object as "number 2" in JSON...
-  // since we want get the former "number 1" object into our additionalProperties object for migration
-  @JsonProperty("episodeNumbers2")
+  @JsonProperty
   private final List<MediaEpisodeNumber>     episodeNumbers        = new CopyOnWriteArrayList<>();
   @JsonProperty
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
